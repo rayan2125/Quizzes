@@ -1,65 +1,111 @@
 import React from 'react';
-import {useState} from 'react';
-import {useEffect} from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
-const shuffleArray=(array)=> {
+const shuffleArray = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
   }
 }
 
-const Login = ({navigation}) => {
+const Login = ({ navigation }) => {
+  const [showButton, setShowButton] = useState(false)
   const [questions, setQuestions] = useState();
   const [ques, setQues] = useState(0);
-  const [options, setOptions]= useState([])
-  const [score, setScore]= useState(0)
-  const [isLoading, setIsLoading]= useState(false)
-  
+  const [options, setOptions] = useState([])
+  const [feedback, setFeedback] = useState(null);
+
+  const [score, setScore] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedOption, setSelectedOption] = useState(null);
+
+  const [correctAnswer, setCorrectAnswer] = useState(null);
+ console.log("correct",correctAnswer)
   const getQuiz = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     const url = 'https://opentdb.com/api.php?amount=10&type=multiple&encode=url3986';
     const res = await fetch(url);
     const data = await res.json();
+    
+    const decodedCorrectAnswer = decodeURIComponent(data.results[0].correct_answer);
+    setCorrectAnswer(decodedCorrectAnswer);
+  
     setQuestions(data.results);
-    setOptions(generateOptionsAndShuffle(data.results[0]))
-    setIsLoading(false)
+    setOptions(generateOptionsAndShuffle(data.results[0]));
+    setIsLoading(false);
   };
+  
 
   useEffect(() => {
     getQuiz();
   }, []);
 
-  const handleNextPress=()=>{
-    setQues(ques+1)
-    setOptions(generateOptionsAndShuffle(questions[ques+1]))
+  const handleNextPress = () => {
+    setQues(ques + 1)
+    setOptions(generateOptionsAndShuffle(questions[ques + 1]))
   }
 
-  const generateOptionsAndShuffle=(_question)=>{
-    const options= [..._question.incorrect_answers]
-    options.push(_question.correct_answer)
- 
-    shuffleArray(options)
+  const generateOptionsAndShuffle = (_question) => {
+    const options = [..._question.incorrect_answers]
+  
+    const correctAnswer = decodeURIComponent(_question.correct_answer);
+   
+    options.push(correctAnswer);
+  
     
-    return options
+    shuffleArray(options);
+  
+    return options;
   }
+  
 
-  const handlSelectedOption=(_option)=>{
-    if(_option===questions[ques].correct_answer){
-      setScore(score+10)
+
+  const handleSelectedOption = (selectedItem) => {
+    const decodedSelectedItem = decodeURIComponent(selectedItem);
+
+
+    setSelectedOption(decodedSelectedItem);
+
+    if (decodedSelectedItem === correctAnswer) {
+      setFeedback('right');
+    } else {
+      setFeedback('wrong');
     }
-    if(ques!==9){
-      setQues(ques+1)
-      setOptions(generateOptionsAndShuffle(questions[ques+1]))
+
+    setShowButton(true);
+  };
+
+
+
+  const handleSubmit = () => {
+    if (selectedOption === questions[ques].correct_answer) {
+      setScore(score + 10);
     }
-    if(ques===9){
-      handleShowResult()
-    }
+  
+    if (ques !== 9) {
+      setSelectedOption(null); 
+      setFeedback(null); 
+      setShowButton(false); 
+  
+      
+      setQues(ques + 1);
+
+  
+  if (ques + 1 < questions.length) {
+    setCorrectAnswer(decodeURIComponent(questions[ques + 1].correct_answer));
+    setOptions(generateOptionsAndShuffle(questions[ques + 1]));
+  } else {
+    handleShowResult();
   }
-
-  const handleShowResult=()=>{
+    } else {
+      handleShowResult();
+    }
+  };
+  
+  const handleShowResult = () => {
     navigation.navigate('Result', {
       score: score
     })
@@ -67,41 +113,68 @@ const Login = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      {isLoading ? <View style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%'}}>
-        <Text style={{fontSize:32, fontWeight:'700'}}>LOADING...</Text>
+      {isLoading ? <View style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Text style={{ fontSize: 32, fontWeight: '700' }}>LOADING...</Text>
       </View> : questions && (
         <View style={styles.parent}>
           <View style={styles.top}>
             <Text style={styles.question}>Q. {decodeURIComponent(questions[ques].question)}</Text>
           </View>
           <View style={styles.options}>
-              
-            <TouchableOpacity style={styles.optionButtom} onPress={()=>handlSelectedOption(options[0])}>
-              <Text style={styles.option}>{decodeURIComponent(options[0])}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButtom} onPress={()=>handlSelectedOption(options[1])}>
-              <Text style={styles.option}>{decodeURIComponent(options[1])}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButtom} onPress={()=>handlSelectedOption(options[2])}>
-              <Text style={styles.option}>{decodeURIComponent(options[2])}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButtom} onPress={()=>handlSelectedOption(options[3])}>
-              <Text style={styles.option}>{decodeURIComponent(options[3])}</Text>
-            </TouchableOpacity>
+            {
+              options.map((item, index) => {
+
+                return (
+
+                  <TouchableOpacity key={index}
+
+                    style={{
+                      backgroundColor:
+                        selectedOption === item
+                          ? feedback === 'right'
+                            ? '#C8FF85'
+                            : feedback === 'wrong'
+                              ? '#FFC2C2'
+                              : 'transparent'
+                          : 'transparent',
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingVertical: 12,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      marginVertical: 6,
+
+                    }}
+                    onPress={() => handleSelectedOption(item)}
+                    disabled={showButton}
+                    >
+                    <Text style={styles.option}>{decodeURIComponent(item)}</Text>
+                    <Text  >{selectedOption === item &&
+                      (feedback === 'right' ? '✔️' : feedback === 'wrong' ? '❌' : '')}</Text>
+                  </TouchableOpacity>
+                )
+              })
+            }
+
           </View>
           <View style={styles.bottom}>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>PREV</Text>
-            </TouchableOpacity>
 
-{ques!==9 &&<TouchableOpacity style={styles.button} onPress={handleNextPress}>
-              <Text style={styles.buttonText}>SKIP</Text>
-            </TouchableOpacity> }
+            {
+              showButton &&
+              <TouchableOpacity style={{
+                backgroundColor: 'green',
+                width: '80%', marginBottom: 12,
+                borderRadius: 16,
+                alignItems: "center",
+                paddingVertical: 16,
+              }}
+                onPress={handleSubmit}
+              >
+                <Text style={styles.buttonText} >Submit</Text>
+              </TouchableOpacity>
+            }
 
-{ques===9 &&<TouchableOpacity style={styles.button} onPress={handleShowResult}>
-              <Text style={styles.buttonText}>SHOW RESULTS</Text>
-            </TouchableOpacity> }
-            
           </View>
         </View>
       )}
@@ -127,7 +200,7 @@ const styles = StyleSheet.create({
   bottom: {
     marginBottom: 12,
     paddingVertical: 16,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     flexDirection: 'row',
   },
   button: {
@@ -149,12 +222,14 @@ const styles = StyleSheet.create({
   option: {
     fontSize: 18,
     fontWeight: '500',
-    color: 'white',
+    color: 'black',
   },
   optionButtom: {
+    borderColor: "white",
+    borderWidth: 1,
     paddingVertical: 12,
     marginVertical: 6,
-    backgroundColor: '#34A0A4',
+    backgroundColor: '#fb8500',
     paddingHorizontal: 12,
     borderRadius: 12,
   },
