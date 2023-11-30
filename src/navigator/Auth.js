@@ -1,14 +1,21 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { createStackNavigator } from "@react-navigation/stack"
 
-const Auth = () => {
+import Register from "../Screens/Auth/Register"
+import Login from "../Screens/Auth/Login"
+import Home from "../Screens/Home"
+
+
+
+const AuthNavigator = () => {
+  const Stack = createStackNavigator()
   return (
-    <View>
-      <Text>Auth</Text>
-    </View>
+    <Stack.Navigator screenOptions={{headerShown:false}}>
+      <Stack.Screen name="Login" component={Login}/>
+      <Stack.Screen name="Register" component={Register}/>
+     
+    </Stack.Navigator>
   )
 }
 
-export default Auth
+export default AuthNavigator
 
-const styles = StyleSheet.create({})

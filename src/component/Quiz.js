@@ -11,7 +11,7 @@ const shuffleArray = (array) => {
   }
 }
 
-const Login = ({ navigation }) => {
+const Quiz = ({ navigation }) => {
   const [showButton, setShowButton] = useState(false)
   const [questions, setQuestions] = useState();
   const [ques, setQues] = useState(0);
@@ -182,7 +182,7 @@ const Login = ({ navigation }) => {
   );
 };
 
-export default Login;
+export default Quiz;
 
 const styles = StyleSheet.create({
   container: {

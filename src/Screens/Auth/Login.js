@@ -5,48 +5,66 @@ import Button from '../../component/Button/Button'
 import { useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { setAuthdata } from '../../redux/Reducers'
+import { navigate } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native'
 
-const Login = ({navigation}) => {
- 
+const Login = () => {
+  const navigation = useNavigation()
+  const authData = useSelector(state => state.auth)
+  // console.log("login check data =>", authData)
+  
+  const dispatch = useDispatch()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorEmail, setErroremail] = useState('')
   const [error, setError] = useState('')
+useEffect(()=>{
+fetchData()
+},[])
 
-  useEffect(()=>{
-    fetchData(),
-    registerData()
-  },[])
-  const registerData = async ()=>{
-try {
-  const register = await AsyncStorage.getItem("UserRegister")
-  if(register !==null){
-    console.log("datat",register)
-  }
-  else{
-    console.log("not fteching data")
-  }
-} catch (error) {
-  console.log("check where my datta is ")
-}
-  }
+
   const fetchData = async () => {
     try {
       const userData = await AsyncStorage.getItem('userData');
-      if (userData !== null) {
       
+      
+      if (userData !== null) {
+        let data= JSON.parse(userData)
+        dispatch(setAuthdata(data));
         const { email, password } = JSON.parse(userData);
-        
-       
+
+
       } else {
-    
+
         console.log('No data found');
       }
     } catch (error) {
       console.error('Error retrieving data:', error);
     }
   };
-  
+  const fetchRegister = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('UserRegister');
+      console.log(userData)
+      
+      if (userData !== null) {
+        let data= JSON.parse(userData)
+        
+      
+
+
+      } else {
+
+        console.log('No data found');
+      }
+    } catch (error) {
+      console.error('Error retrieving data:', error);
+    }
+  };
+
 
   const handleSubmit = async () => {
     let isValid = false;
@@ -74,10 +92,14 @@ try {
       try {
         await AsyncStorage.setItem('userData', JSON.stringify({ email, password }));
         console.log('Data stored successfully!');
+        dispatch(setAuthdata())
+        navigation.navigate("Home")
       } catch (error) {
         console.error('Error storing data:', error);
       }
     }
+
+  
 
     return isValid;
   };
@@ -104,15 +126,18 @@ try {
       <Text style={{ color: "red", left: -100 }}>{error}</Text>
 
 
-      <TouchableOpacity style={[styles.btn,{
-         backgroundColor: "green",
-      }]} onPress={()=>navigation.navigate("Register")}>
+      <TouchableOpacity style={[styles.btn, {
+        backgroundColor: "green",
+        columnGap:5,
+        
+      }]} onPress={() => navigation.navigate("Register")}>
         <Text style={styles.text}>Register</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.btn,{
-         backgroundColor: "#fb6107",
-         marginBottom:6
-        
+      <TouchableOpacity style={[styles.btn, {
+        backgroundColor: "#fb6107",
+        marginBottom: 6,
+        top:10
+
       }]} onPress={handleSubmit}>
         <Text style={styles.text}>Login</Text>
       </TouchableOpacity>
@@ -137,8 +162,8 @@ const styles = StyleSheet.create({
   },
   btn: {
     // top: 10,
-    
-   
+
+
     width: "70%", height: 40,
     borderRadius: 15,
     justifyContent: "center",
